@@ -1,39 +1,53 @@
 import 'package:flutter/material.dart';
-import 'package:dio/dio.dart';
 import 'package:meow_generator2/networking/api_client.dart';
 import 'package:meow_generator2/model/cat.dart';
 
 class CatScreen extends StatefulWidget {
+  const CatScreen({Key? key}) : super(key: key);
+
   @override
   _CatScreenState createState() => _CatScreenState();
 }
 
 class _CatScreenState extends State<CatScreen> {
-  late Future<Cat> _futureCat;
+  late Future<Cat> _catModel;
 
   @override
   void initState() {
     super.initState();
-    _futureCat = _fetchRandomCat();
+    _getCatImage();
   }
 
-  Future<Cat> _fetchRandomCat() async {
-    final client = ApiClient(Dio());
-    final cats = await client.getRandomCat();
-    return cats[0];
+  Future<void> _getCatImage() async {
+    setState(() {
+      _catModel = ApiClient().getRandomCat();
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          'Meow Generator',
-          style: TextStyle(fontFamily: 'Quicksand'),
+        title: Text('Cat Screen'),
+      ),
+      body: Center(
+        child: FutureBuilder<Cat>(
+          future: _catModel,
+          builder: (context, snapshot) {
+            if (snapshot.hasData) {
+              return Image.network(snapshot.data!.url, fit: BoxFit.contain);
+            } else if (snapshot.hasError) {
+              return Text('${snapshot.error}');
+            }
+
+            return const CircularProgressIndicator();
+          },
         ),
       ),
-      body: FutureBuilder<Cat>(
-        future: _futureCat,
-        builder: (BuildContext context, AsyncSnapshot<Cat> snapshot) {
-          if (snapshot.connectionState == ConnectionState.done) {
-           
+      floatingActionButton: FloatingActionButton(
+        onPressed: _getCatImage,
+        child: const Icon(Icons.refresh),
+      ),
+    );
+  }
+}

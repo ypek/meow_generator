@@ -1,53 +1,20 @@
-import 'package:flutter/material.dart';
-import 'package:meow_generator2/networking/api_client.dart';
+import 'dart:convert';
+
+import 'package:http/http.dart' as http;
+
 import 'package:meow_generator2/model/cat.dart';
 
-class CatScreen extends StatefulWidget {
-  const CatScreen({Key? key}) : super(key: key);
+class ApiClient {
+  static const baseUrl = 'https://api.thecatapi.com/v1';
 
-  @override
-  _CatScreenState createState() => _CatScreenState();
-}
+  Future<Cat> getRandomCat() async {
+    final response = await http.get(Uri.parse('$baseUrl/images/search'));
 
-class _CatScreenState extends State<CatScreen> {
-  late Future<CatModel> _catModel;
-
-  @override
-  void initState() {
-    super.initState();
-    _getCatImage();
-  }
-
-  Future<void> _getCatImage() async {
-    setState(() {
-      _catModel = CatApi().getCatImage();
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Cat Screen'),
-      ),
-      body: Center(
-        child: FutureBuilder<CatModel>(
-          future: _catModel,
-          builder: (context, snapshot) {
-            if (snapshot.hasData) {
-              return Image.network(snapshot.data!.file, fit: BoxFit.contain);
-            } else if (snapshot.hasError) {
-              return Text('${snapshot.error}');
-            }
-
-            return const CircularProgressIndicator();
-          },
-        ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _getCatImage,
-        child: const Icon(Icons.refresh),
-      ),
-    );
+    if (response.statusCode == 200) {
+      final json = jsonDecode(response.body)[0];
+      return Cat.fromJson(json);
+    } else {
+      throw Exception('Failed to load cat');
+    }
   }
 }
